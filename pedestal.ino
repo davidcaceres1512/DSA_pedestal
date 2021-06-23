@@ -183,6 +183,8 @@ void mqtt_publish_buffer(void)
 #endif
 }
 
+int option;
+
 void setup()
 {
     // put your setup code here, to run once:
@@ -327,6 +329,16 @@ void setup()
 
 void loop()
 {
+    if (Serial.available()>0){
+    //leemos la opcion enviada
+    option=Serial.read();
+    if(option=='a') {
+      Serial.println("OFF");
+      delay(12001);
+    }
+  }
+
+
     //unsigned long start_loop = micros();
     // put your main code here, to run repeatedly:
     // listen for incoming clients
