@@ -332,15 +332,16 @@ void setup()
 
 void loop()
 {
+
     if (Serial.available()>0){
     //leemos la opcion enviada
     option=Serial.read();
     if(option=='r') {
-    
         Serial.println("OFF");
         while(1);//force reset iwatchdog
         }
-  }
+    }
+    IWatchdog.reload();
 
 
     //unsigned long start_loop = micros();
