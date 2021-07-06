@@ -44,7 +44,10 @@ DynamicJsonDocument jsondoc(2048);
 char decoded_content[2048];
 
 const long timeout = 500; // Timeout for the analysis of the data.
+const long timeoutReset = 12010;
+
 long lastTime = 0;
+long lastTimeR = 0;
 
 // IP address in case DHCP fails
 
@@ -332,10 +335,11 @@ void loop()
     if (Serial.available()>0){
     //leemos la opcion enviada
     option=Serial.read();
-    if(option=='a') {
-      Serial.println("OFF");
-      delay(12001);
-    }
+    if(option=='r') {
+    
+        Serial.println("OFF");
+        while(1);//force reset iwatchdog
+        }
   }
 
 
