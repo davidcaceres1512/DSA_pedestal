@@ -1,0 +1,3 @@
+[submodule "libraries/firmware"]
+	path = libraries/firmware
+	url = https://github.com/davidcaceres1512/pedestal-stm32-library.git
