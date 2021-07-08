@@ -7,7 +7,7 @@
 #include <rBase64.h>
 #include <ArduinoJson.h>
 //#include <RunningMedian.h>
-#include <NTPClient.h>
+//#include <NTPClient.h>
 #include <EthernetUdp.h>
 #include <STM32RTC.h>
 #include "Pedestal.h"
@@ -44,29 +44,34 @@ DynamicJsonDocument jsondoc(2048);
 char decoded_content[2048];
 
 const long timeout = 500; // Timeout for the analysis of the data.
-const long timeoutReset = 12010;
-
 long lastTime = 0;
-long lastTimeR = 0;
 
 // IP address in case DHCP fails
+const char host[] = "10.10.10.28"; // time.nist.gov NTP server
 
-
-IPAddress ip(10,10,10,27);
-IPAddress subnet(255,255,255,0);
-IPAddress gateway(10,10,10,1);
-IPAddress mydns(10,10,10,1);
+IPAddress ip(10, 10, 10, 27); //pedestal
+IPAddress subnet(255, 255, 255, 0);
+IPAddress gateway(10, 10, 10, 1);
+IPAddress mydns(10, 10, 10, 1);
 
 // Ethernet server
 EthernetServer server(80);
 // Ethernet client
 EthernetClient ethClient;
 
+unsigned int localPort = 123;
+uint16_t port = 123;
+
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+
+byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+
 // Create aREST instance
 aREST rest = aREST();
 
 PangolinMQTT mqttClient;
-#define MQTT_HOST IPAddress(10,10,10,29)
+//#define MQTT_HOST IPAddress(192, 168, 8, 102)
+#define MQTT_HOST IPAddress(10, 10, 10, 29)
 //#define MQTT_HOST "test.mosquitto.org"
 #define MQTT_PORT 1883
 #define START_WITH_CLEAN_SESSION true
@@ -87,12 +92,12 @@ bool mqtt_flag = false;
 //RunningMedian loop_time = RunningMedian(500);
 unsigned long loop_max = 0;
 
-const int port = 443; // port to listen on
+//const int port = 443; // port to listen on
 
 STM32RTC &rtc = STM32RTC::getInstance();
 
-EthernetUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pe.pool.ntp.org", 0, 10000);
+EthernetUDP Udp;
+//NTPClient timeClient(ntpUDP, "pe.pool.ntp.org", 0, 10000);
 
 const byte interruptPPS = 22;
 
@@ -186,6 +191,7 @@ void mqtt_publish_buffer(void)
 #endif
 }
 
+void sendNTPpacket(const char *); //prototype function
 int option;
 
 void setup()
@@ -273,17 +279,18 @@ void setup()
     server.begin();
     Serial.print("Server is at ");
     Serial.println(Ethernet.localIP());
-
+    delay(1);
+    Udp.begin(localPort);
     // NTP configuration
-    timeClient.begin();
-    Serial.println("NTP client started.");
-    Serial.println("Geting NTP server time reference.");
-    rtc.begin();
-    timeClient.update();
-    rtc.setEpoch(timeClient.getEpochTime());
-    Serial.print("Epoch time from NTP server: ");
-    Serial.println(timeClient.getEpochTime());
-    Serial.println(timeClient.getFormattedTime() + " UTC");
+    //timeClient.begin();
+    //Serial.println("NTP client started.");
+    //Serial.println("Geting NTP server time reference.");
+    //rtc.begin();
+    //timeClient.update();
+    //rtc.setEpoch(timeClient.getEpochTime());
+    //Serial.print("Epoch time from NTP server: ");
+    // Serial.println(timeClient.getEpochTime());
+    //Serial.println(timeClient.getFormattedTime() + " UTC");
 
     // MQTT configuration
     mqtt_connected = false;
@@ -359,10 +366,21 @@ void loop()
 
     if (mqtt_irq_flag && mqtt_connected)
     {
-        timeClient.update();
-        rtc.setEpoch(timeClient.getEpochTime());
+        sendNTPpacket(host);
+        //rtc.setEpoch(timeClient.getEpochTime());
         IWatchdog.reload();
-        uint32_t temptime = timeClient.getEpochTime();
+
+        while (!Udp.parsePacket())
+        {
+            ;
+        }
+        // We've received a packet, read the data from it
+        Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
+
+        // the timestamp starts at byte 40 of the received packet and is four bytes,
+        // or two words, long. First, extract the two words:
+        //this field is transmit timestamp of the NTP packet
+
         uint16_t i = 0;
         while (pedestal.getBufferSize() > 69)
         {
@@ -375,17 +393,65 @@ void loop()
             *(mqtt_buffer + i + j) = pedestal.getBufferData(j);
             j++;
         }
-        *(mqtt_buffer + i + j) = (byte)(temptime & 0xFF);
-        *(mqtt_buffer + i + j + 1) = (byte)((temptime >> 8) & 0xFF);
-        *(mqtt_buffer + i + j + 2) = (byte)((temptime >> 16) & 0xFF);
-        *(mqtt_buffer + i + j + 3) = (byte)((temptime >> 24) & 0xFF);
-        coded_buffer_len = rbase64_encode((char *)coded_buffer, (char *)mqtt_buffer, i + j + 4);
+        *(mqtt_buffer + i + j) = (byte)(packetBuffer[43]); //packetbuffer[43] LSB of timestamp second
+        *(mqtt_buffer + i + j + 1) = (byte)(packetBuffer[42]);
+        *(mqtt_buffer + i + j + 2) = (byte)(packetBuffer[41]);
+        *(mqtt_buffer + i + j + 3) = (byte)(packetBuffer[40]); //packetbuffer[40] MSB of timestamp second
+        *(mqtt_buffer + i + j + 4) = (byte)(packetBuffer[47]); //packetbuffer[47] LSB of timestamp fractional
+        *(mqtt_buffer + i + j + 5) = (byte)(packetBuffer[46]);
+        *(mqtt_buffer + i + j + 6) = (byte)(packetBuffer[45]);
+        *(mqtt_buffer + i + j + 7) = (byte)(packetBuffer[44]); //packetbuffer[44] MSB of timestamp fractional
+        coded_buffer_len = rbase64_encode((char *)coded_buffer, (char *)mqtt_buffer, i + j + 8);
         IWatchdog.reload();
         //mqttClient.publish("JRO_topic",0,false,std::string((char*)coded_buffer));
         if (coded_buffer_len >= 8192)
             Serial.println("WARNING: MQTT buffer is too big " + String(coded_buffer_len));
         mqttClient.publish("JRO_topic", (uint8_t *)coded_buffer, coded_buffer_len, 0, false);
         mqtt_irq_flag = false;
+
+        uint16_t highWord = word(packetBuffer[40], packetBuffer[41]);
+        uint16_t lowWord = word(packetBuffer[42], packetBuffer[43]);
+        uint16_t highWordFraction = word(packetBuffer[44], packetBuffer[45]);
+        uint16_t lowWordFraction = word(packetBuffer[46], packetBuffer[47]);
+        // combine the four bytes (two words) into a long integer
+        // this is NTP time (seconds since Jan 1 1900):
+        uint32_t secsSince1970 = highWord << 16 | lowWord;
+        uint32_t fractionSecs = highWordFraction << 16 | lowWordFraction;
+
+        Serial.print("Seconds since Jan 1 1970 = ");
+        Serial.println(secsSince1970);
+        Serial.print("Seconds since Jan 1 1900 in HEX= ");
+        Serial.println(secsSince1970, HEX);
+
+        // now convert NTP time into everyday time:
+        Serial.print("Unix time = ");
+        // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+        const uint32_t seventyYears = 2208988800UL;
+        // subtract seventy years:
+        uint32_t epoch = secsSince1970;
+        // print Unix time:
+        Serial.println(epoch);
+
+        // print the hour, minute and second:
+        Serial.print("The UTC time is ");      // UTC is the time at Greenwich Meridian (GMT)
+        Serial.print((epoch % 86400L) / 3600); // print the hour (86400 equals secs per day)
+        Serial.print(':');
+        if (((epoch % 3600) / 60) < 10)
+        {
+            // In the first 10 minutes of each hour, we'll want a leading '0'
+            Serial.print('0');
+        }
+        Serial.print((epoch % 3600) / 60); // print the minute (3600 equals secs per minute)
+        Serial.print(':');
+        if ((epoch % 60) < 10)
+        {
+            // In the first 10 seconds of each minute, we'll want a leading '0'
+            Serial.print('0');
+        }
+        Serial.println(epoch % 60); // print the second
+
+        Serial.print("fraction seconds in HEX point fixed is ");
+        Serial.println(fractionSecs, HEX);
     }
 
     long now = millis();
@@ -436,6 +502,7 @@ void loop()
     //unsigned long x = loop_time.getHighest();
     //if (loop_max < x)
     //loop_max = x;
+    Ethernet.maintain();
 }
 
 bool decode_command(String command)
@@ -632,4 +699,28 @@ int calibrate(String command)
     Serial.println(command);
 
     return 1;
+}
+
+// send an NTP request to the time server at the given address
+void sendNTPpacket(const char *address)
+{
+    // set all bytes in the buffer to 0
+    memset(packetBuffer, 0, NTP_PACKET_SIZE);
+    // Initialize values needed to form NTP request
+    // (see URL above for details on the packets)
+    packetBuffer[0] = 0b11100011; // LI, Version, Mode
+    packetBuffer[1] = 0;          // Stratum, or type of clock
+    packetBuffer[2] = 6;          // Polling Interval
+    packetBuffer[3] = 0xEC;       // Peer Clock Precision
+    // 8 bytes of zero for Root Delay & Root Dispersion
+    packetBuffer[12] = 49;
+    packetBuffer[13] = 0x4E;
+    packetBuffer[14] = 49;
+    packetBuffer[15] = 52;
+
+    // all NTP fields have been given values, now
+    // you can send a packet requesting a timestamp:
+    Udp.beginPacket(address, 123); // NTP requests are to port 123
+    Udp.write(packetBuffer, NTP_PACKET_SIZE);
+    Udp.endPacket();
 }
