@@ -94,6 +94,10 @@ unsigned long loop_max = 0;
 
 //const int port = 443; // port to listen on
 
+uint32_t PPS_PIN = PC7;//up
+//uint32_t PPS_PIN = PB3; down
+
+
 STM32RTC &rtc = STM32RTC::getInstance();
 
 EthernetUDP Udp;
@@ -163,12 +167,12 @@ void onMqttDisconnect(int8_t reason)
 
 void mqtt_publish_buffer(void)
 {
-    if (interrupt_counter == 100)
-    {
+    // if (interrupt_counter == 100)
+    //{
         mqtt_irq_flag = true;
-        interrupt_counter = 0;
-    }
-    interrupt_counter++;
+    //    interrupt_counter = 0;
+    // }
+    //interrupt_counter++;
 #ifdef PEDESTAL_SIMULATION
     uint8_t x = pedestal.getOpMode();
     if (x == OPMODE_SCAN || x == OPMODE_TABLE)
@@ -212,6 +216,8 @@ void setup()
     Serial.flush();
     Serial4.begin(115200);
     Serial4.flush();
+    
+
 
     if (IWatchdog.isReset(true))
     {
@@ -323,9 +329,13 @@ void setup()
     }
 
     interrupt_counter = 0;
-    PPSTim->setOverflow(100, HERTZ_FORMAT); // 100 Hz
-    PPSTim->attachInterrupt(mqtt_publish_buffer);
-    PPSTim->resume();
+    Serial.println("Setting up PPS pin interrupt");
+    attachInterrupt(PPS_PIN, mqtt_publish_buffer, RISING); //ISR is an function Interrupt Service Routine, digitalPinToInterrupt(PPS_PIN)
+    delay(100);
+
+    //PPSTim->setOverflow(100, HERTZ_FORMAT); // 100 Hz
+    //PPSTim->attachInterrupt(mqtt_publish_buffer);
+    //PPSTim->resume();
 
     Serial.println("Leaving \"setup()\" now.");
     Serial.println();
@@ -374,6 +384,7 @@ void loop()
         {
             ;
         }
+        IWatchdog.reload();
         // We've received a packet, read the data from it
         Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
 
@@ -441,6 +452,9 @@ void loop()
             // In the first 10 minutes of each hour, we'll want a leading '0'
             Serial.print('0');
         }
+
+        IWatchdog.reload();
+        
         Serial.print((epoch % 3600) / 60); // print the minute (3600 equals secs per minute)
         Serial.print(':');
         if ((epoch % 60) < 10)
