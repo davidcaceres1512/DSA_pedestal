@@ -71,7 +71,7 @@ aREST rest = aREST();
 
 PangolinMQTT mqttClient;
 //#define MQTT_HOST IPAddress(192, 168, 8, 102)
-#define MQTT_HOST IPAddress(10, 10, 10, 29)
+#define MQTT_HOST IPAddress(10, 10, 10, 30)
 //#define MQTT_HOST "test.mosquitto.org"
 #define MQTT_PORT 1883
 #define START_WITH_CLEAN_SESSION true
@@ -94,8 +94,8 @@ unsigned long loop_max = 0;
 
 //const int port = 443; // port to listen on
 
-uint32_t PPS_PIN = PC7;//up
-//uint32_t PPS_PIN = PB3; down
+//uint32_t PPS_PIN = PC7;//up
+uint32_t PPS_PIN = PB3; //down
 
 
 STM32RTC &rtc = STM32RTC::getInstance();
