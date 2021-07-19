@@ -1,10 +1,24 @@
 import paho.mqtt.client as mqtt
 import time
+import datetime
 import base64
 import numpy
 import signal
 import sys
 import logging
+#----------------------------
+import os
+import h5py
+fullpath='/home/soporte/Downloads/DATA_PEDESTAL/PED_RT'
+wpath='Users\soporte\Downloads'
+#-----------------------------
+
+directoryx=''
+
+
+directoryx=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+os.mkdir(os.path.join(fullpath,directoryx))
+
 
 #updater = Updater(token='1506060089:AAEC18kF80Mc1lCX2T2DLHKQybOLmx56Et0', use_context=True)
 #dispatcher = updater.dispatcher
@@ -12,7 +26,7 @@ import logging
 #logging.getLogger("telegram").setLevel(logging.WARNING)
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.DEBUG) # or whatever
-handler2 = logging.FileHandler('pedestal_mqtt.log', 'w', 'utf-8') # or whatever
+handler2 = logging.FileHandler(os.path.join(fullpath,directoryx,'pedestal_mqtt.log'), 'w', 'utf-8') # or whatever
 handler2.setFormatter(logging.Formatter('%(asctime)s %(message)s')) # or whatever
 root_logger.addHandler(handler2)
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -38,7 +52,7 @@ USHRT_MAX =  65535
 
 mqtt_status=False
 start_time=0
-broker="10.10.10.29"
+broker="10.10.10.30"
 port=1883
 data="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"
 azpos = 0
@@ -47,12 +61,6 @@ elpos = 0
 elspeed = 0
 start_variable = False
 
-#----------------------------
-import os
-import h5py
-fullpath='/home/developer/Downloads/PED_RT'
-wpath='Users\soporte\Downloads'
-#-----------------------------
 
 def getSpeedPosition(msg_b64):
     AzPosition=[]
@@ -203,6 +211,8 @@ def on_message(client, userdata, msg):
     global azspeed
     global elpos
     global elspeed
+    global directoryx
+
     start_time = time.process_time_ns()
     RawData,AzPosition,AzSpeed,ElPosition,ElSpeed,Timestamp = getSpeedPosition(str(msg.payload.decode("utf-8")))
     xx = numpy.array([[AzPosition],[AzSpeed],[ElPosition],[ElSpeed]], dtype=object)
@@ -235,7 +245,7 @@ def on_message(client, userdata, msg):
     ext=".hdf5"
     filex="%s%4.4d%3.3d%10.4d%s"%(meta,time_val.tm_year,time_val.tm_yday,epoch_time,ext)
     #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
-    filename =os.path.join(fullpath,filex)
+    filename =os.path.join(fullpath,directoryx,filex)
     print(filename)
     fp = h5py.File(filename,'w')
     #print("Escribiendo HDF5...",epoc)
