@@ -58,10 +58,11 @@ libraries used in the framework arduino-cli with stm32duino_core 1.9.0.
 #### Software <a name = "req_software"></a>
 
 #### - broker
-
+- **in windows:**
 1. Install broker  [mosquitto](https://mosquitto.org/download/) 1.6.x.
 
 2. deactivate firewall or add new rule into firewall (port 1883).
+
 
 3. activate the service mosquitto.
 
@@ -79,14 +80,116 @@ libraries used in the framework arduino-cli with stm32duino_core 1.9.0.
 > ```
 > *click [here](http://www.steves-internet-guide.com/install-mosquitto-broker/) for more information.* 
 
-#### - python requirements
+- **in ubuntu:**
+
+1. Install broker  [mosquitto](https://mosquitto.org/download/) 1.6.x.
+```bash
+sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
+sudo apt-get update
+sudo apt-get install mosquitto
+```
+2. Add new rule into firewall (port 1883).
+```bash
+sudo ufw allow 1883 
+sudo ufw enable
+```
+3. Verify is not already running
+```bash
+pgrep mosquitto
+```
+> **Note** 
+> if any number shows, that is the PID of an already running Mosquitto. You can just kill it. Also, you can try: 
+> ```bash
+> sudo service mosquitto stop
+> ```  
+
+4. Start Mosquitto with verbose option
+```bash
+mosquitto -v
+```
+
+> **warning!**
+> if you install mosquitto 2.x.x you have modified mosquitto.conf
+> 1. add the next words into file **mosquitto.conf**
+> ```bash
+> sudo nano mosquitto.conf
+> listener 1883
+> allow_anonymous true 
+> ```
+> 2. restart the services for surting effect the modified  
+> ```bash
+> pgrep mosquitto | xargs kill
+> sudo service mosquitto start
+> ```
+> *click [here](https://askubuntu.com/questions/1121524/mosquito-server-refuses-connections-ubuntu-18-04) for more information.* 
+
+#### - python 3.9  
 
 1. install python 3.9
-2. install the requirements
+```bash
+#!/bin/sh
+
+# install PPA
+sudo add-apt-repository ppa:deadsnakes/ppa
+
+# update and install
+sudo apt update
+sudo apt install python3.9 python3.9-dev python3.9-venv
+
+# setup alternatives
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2
+
+# show menu for selecting the version
+sudo update-alternatives --config python3
+```
+
+2. install pip in python 3.9
+
+```bash
+#install pip for specific version
+curl https://bootstrap.pypa.io/get-pip.py | sudo python3.9
+```
+> *optional*
+> ```bash
+> # you can separate pip with "update-alternatives"
+> sudo update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+> # show menu for selecting the version
+> sudo update-alternatives --config pip 
+> ```
+
+#### - python requirements  
+
+
+1. install the requirements
 
 ```python
 pip install -r libraries/software/requirements.txt
 ```
+
+#### - hdf5 viewer
+
+1. install panoply or hdf5group
+
+> click [here](https://www.giss.nasa.gov/tools/panoply/) to install panoply
+
+2. verified java
+```bash
+java --version
+```
+2. install java
+```bash
+sudo apt install default-jdk
+```
+3. execute Panoply.jar 
+```bash
+java -jar jars/Panoply.jar
+```
+
+#### - docker
+
+> click [here](https://docs.docker.com/engine/install/ubuntu/) to install docker in ubuntu 18.04
+
 ### Installing
 
 A step by step series of examples that tell you how to get a development env running.
