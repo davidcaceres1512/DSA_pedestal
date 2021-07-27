@@ -1,3 +1,4 @@
+from numpy.core.fromnumeric import var
 import paho.mqtt.client as mqtt
 import time
 import datetime
@@ -6,6 +7,7 @@ import numpy
 import signal
 import sys
 import logging
+import pandas as pd
 #----------------------------
 import os
 import h5py
@@ -18,7 +20,8 @@ directoryx=''
 
 directoryx=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 os.mkdir(os.path.join(fullpath,directoryx))
-
+os.mkdir(os.path.join(fullpath,directoryx,'LOG'))
+os.mkdir(os.path.join(fullpath,directoryx,'HDF5'))
 
 #updater = Updater(token='1506060089:AAEC18kF80Mc1lCX2T2DLHKQybOLmx56Et0', use_context=True)
 #dispatcher = updater.dispatcher
@@ -26,7 +29,7 @@ os.mkdir(os.path.join(fullpath,directoryx))
 #logging.getLogger("telegram").setLevel(logging.WARNING)
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.DEBUG) # or whatever
-handler2 = logging.FileHandler(os.path.join(fullpath,directoryx,'pedestal_mqtt.log'), 'w', 'utf-8') # or whatever
+handler2 = logging.FileHandler(os.path.join(fullpath,directoryx,'LOG','pedestal_mqtt.log'), 'w', 'utf-8') # or whatever
 handler2.setFormatter(logging.Formatter('%(asctime)s %(message)s')) # or whatever
 root_logger.addHandler(handler2)
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -61,6 +64,23 @@ elpos = 0
 elspeed = 0
 start_variable = False
 
+def preprocessingOutliers(varInput):
+    s=pd.Series(varInput)
+    threshold=s.mad()
+    threshold=5
+    print(threshold)
+    for i in range(len(varInput)):  
+      if i>0:
+        dev=abs(varInput[i]-varInput[i-1])
+        if dev>threshold:
+        #ele_pos[i]=ele_pos[i-1]+threshold
+          varInput[i]=varInput[i-10]
+
+def preprocessingZero(varInput):
+    for i in range(len(varInput)):  
+      if varInput[i]>=359.5:
+      #ele_pos[i]=ele_pos[i-1]+threshold
+        varInput[i]=0.0
 
 def getSpeedPosition(msg_b64):
     AzPosition=[]
@@ -215,6 +235,9 @@ def on_message(client, userdata, msg):
 
     start_time = time.process_time_ns()
     RawData,AzPosition,AzSpeed,ElPosition,ElSpeed,Timestamp = getSpeedPosition(str(msg.payload.decode("utf-8")))
+    #preprocessingOutliers(ElPosition)
+    #preprocessingZero(ElPosition)
+    #preprocessingOutliers(AzPosition)
     xx = numpy.array([[AzPosition],[AzSpeed],[ElPosition],[ElSpeed]], dtype=object)
     with numpy.printoptions(precision=3, suppress=True):
         #print("Azimuth position array:")
@@ -245,7 +268,7 @@ def on_message(client, userdata, msg):
     ext=".hdf5"
     filex="%s%4.4d%3.3d%10.4d%s"%(meta,time_val.tm_year,time_val.tm_yday,epoch_time,ext)
     #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
-    filename =os.path.join(fullpath,directoryx,filex)
+    filename =os.path.join(fullpath,directoryx,'HDF5',filex)
     print(filename)
     fp = h5py.File(filename,'w')
     #print("Escribiendo HDF5...",epoc)
