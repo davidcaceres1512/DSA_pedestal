@@ -16,7 +16,7 @@ logging.getLogger().addHandler(logging.StreamHandler())
 
 ser = serial.Serial(
     #port='COM5',
-    port='/dev/ttyACM0',    #verified that ucserverntp is connected into port ttyACM0
+    port='/dev/ttyACM1',    #verified that ucserverntp is connected into port ttyACM0
     baudrate=1000000,
     parity='N',
     stopbits=1,

@@ -16,7 +16,7 @@ logging.getLogger().addHandler(logging.StreamHandler())
 
 nucleo144Serial = serial.Serial(
     #port='COM5',
-    port='/dev/ttyACM1', #verified that uc_pedestal is connected into port ttyACM1
+    port='/dev/ttyACM0', #verified that uc_pedestal is connected into port ttyACM1
     baudrate=1000000,
     parity='N',
     stopbits=1,
