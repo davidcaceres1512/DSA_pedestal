@@ -12,7 +12,7 @@ import pandas as pd
 import os
 import h5py
 fullpath='/home/soporte/Downloads/DATA_PEDESTAL/PED_RT'
-wpath='Users\soporte\Downloads'
+#wpath='Users\soporte\Downloads'
 #-----------------------------
 
 directoryx=''
@@ -94,7 +94,7 @@ def getSpeedPosition(msg_b64):
     #Timestamp = int(RawData[len(RawData)-4])+int(RawData[len(RawData)-3]<<8)+int(RawData[len(RawData)-2]<<16)+int(RawData[len(RawData)-1]<<24)
     Timestamp = (RawData[len(RawData)-4])|(RawData[len(RawData)-3]<<8)|(RawData[len(RawData)-2]<<16)|(RawData[len(RawData)-1]<<24)
     counter = 0
-    while counter < len(RawData)-2:
+    while counter < len(RawData)-4:
       #print(counter)
       if RawData[counter]==HEADER:
         if RawData[counter+1]==RX_FUNCTION:
