@@ -171,7 +171,7 @@ const double MULTIPLIER = 4294.967296;
 // ---------------------------
 //uint32_t PPS_PIN = PB_5;
 uint32_t PPS_PIN = PB5;
-uint32_t RESET_PIN = PE9;//PF13
+uint32_t RESET_PIN = PE9; //PF13
 
 //PB7 AND PB14 WILL BE USED FOR SHOW LEDs
 const uint32_t led = PB0;      //green led
@@ -183,7 +183,7 @@ uint32_t resetFpga = 0;
 // SPI def
 // ---------------------------
 int SPI_delay = 10;
-#define SS (uint8_t)PD14 //chip selector in SPIslave
+#define SS (uint8_t) PD14 //chip selector in SPIslave
 // ---------------------------
 // ---------------------------
 uint32_t lasttimepacketsize = 0;
@@ -410,6 +410,7 @@ long pxWidth = 0;
 //****************************************
 //**** API FUNCTIONS DECLARATIONS ********
 //****************************************
+int getStatusTrimble(String command);
 int reset(String command);
 //int changeip(String command);
 int setChannel(String command);
@@ -554,11 +555,11 @@ void setup()
 
     //const char host[] = "10.10.10.30"; //prueba arduino
     //Udp.beginPacket(host,NTPport);                  //prueba arduino
-    
+
     // ucg.setColor(76, 255, 255); //cyan
     //ucg.setPrintPos((ucg.getWidth() / 2) - ((sizeof("Setting up trimble init") / 2) * font.size_12), (ucg.getHeight() * 2) / 8);
     //ucg.print("Setting up trimble init"); //replace this space for trimble configuration version!
-    
+
     Serial.println("Setting up trimble init");
     Serial2.begin(TSIP_BAUD_RATE);
 
@@ -571,31 +572,33 @@ void setup()
     rest.function("clockmode", clockMode);
     rest.function("setchannel", setChannel);
     rest.function("reset", reset);
+    rest.function("getStatusTrimble", getStatusTrimble);
     // Give name & ID to the device (ID should be 6 characters long)
     rest.set_id("001");
     rest.set_name("DSA_controller");
 
-     tbolt.flush();
-  if (tbolt.getSoftwareVersionInfo() == false) // this call is synchronous (waits for a response - but will timeout)
-  {
-  Serial.println("Unable to start Thunderbolt, nothing more to do.");
-  while (1)
-  {
-    ;
-  }
-  } else {
-          display_version(tbolt.getVersion());
-          }
+    tbolt.flush();
+    if (tbolt.getSoftwareVersionInfo() == false) // this call is synchronous (waits for a response - but will timeout)
+    {
+        Serial.println("Unable to start Thunder;bolt, nothing more to do.");
+        while (1)
+        {
+            ;
+        }
+    }
+    else
+    {
+        display_version(tbolt.getVersion());
+    }
 
-  #ifdef MODE_DEBUG
-  Serial.println("End configuration of Trimble.");
-  #endif
+#ifdef MODE_DEBUG
+    Serial.println("End configuration of Trimble.");
+#endif
 
     //inicializar SPI
     //ucg.setColor(76, 255, 255); //cyan
     //ucg.setPrintPos((ucg.getWidth() / 2) - ((sizeof("Setting up bus SPI") / 2) * font.size_12), (ucg.getHeight() * 3) / 8);
     //ucg.print("Setting up bus SPI");
-
 
     //Udp.begin(NTP_PORT);this line should be after initialize the ip
 
@@ -604,7 +607,7 @@ void setup()
     digitalWrite(RESET_PIN, LOW);
 
 #ifdef __IWATCHDOG_H__
-IWatchdog.clearReset();
+    IWatchdog.clearReset();
     if (IWatchdog.isReset(true))
     {
         // LED blinks to indicate reset
@@ -634,14 +637,13 @@ IWatchdog.clearReset();
             Serial.println("Watchdog is not enabled!");
         }
     }
-    
 
-   /* ucg.setColor(76, 255, 255); //cyan
+    /* ucg.setColor(76, 255, 255); //cyan
     ucg.setPrintPos((ucg.getWidth() / 2) - ((sizeof("Setting up iwatchdog") / 2) * font.size_12), (ucg.getHeight() * 4) / 8);
     ucg.print("Setting up iwatchdog");*/
 #endif
 
-Serial.println("Setting up bus SPI");
+    Serial.println("Setting up bus SPI");
     //pinMode(SS, OUTPUT);
     //digitalWrite(SS, HIGH);
     SPI.setSCLK(PA_5);
@@ -707,23 +709,23 @@ Serial.println("Setting up bus SPI");
 #endif
     /*ucg.undoScale();
     ucg.clearScreen();*/
-
-
-} 
-
+}
 
 void loop()
 {
-      if (Serial.available()>0){
-    //leemos la opcion enviada
-    option=Serial.read();
-    if(option=='r') {
-        Serial.println("OFF");
-        while(1);//force reset iwatchdog
+    if (Serial.available() > 0)
+    {
+        //leemos la opcion enviada
+        option = Serial.read();
+        if (option == 'r')
+        {
+            Serial.println("OFF");
+            while (1)
+                ; //force reset iwatchdog
         }
     }
     IWatchdog.reload();
-    
+
     // listen for incoming clients
     EthernetClient ethClient = server.available();
 #ifdef __IWATCHDOG_H__
@@ -746,7 +748,7 @@ void loop()
     IWatchdog.reload();
 #endif
 
-  /*  if (digitalRead(button))
+    /*  if (digitalRead(button))
     {
         buttonState = !buttonState;
         ucg.clearScreen();
@@ -794,11 +796,11 @@ void loop()
             //ucg.print("OFF"); // extra spaces
         }*/
 
-        /**
+    /**
          * @brief dynamic signal for TR and PPS
          * 
          */
-       /* int yLevel;
+    /* int yLevel;
         int xCtePps = 40;
         int yCtePps = 124; //144-20
         int xCte = 40;
@@ -859,7 +861,7 @@ void loop()
         }
         
       }*/
-      
+
     /*ucg.setFont(ucg_font_ncenR24_tr);
     ucg.setColor(76, 233, 29); //green
     //ucg.setColor(0, 255, 0);
@@ -868,8 +870,7 @@ void loop()
     ucg.setPrintPos(60, 160); //240,320
     ucg.print("Hello World!");*/
 
-    
-  /*  // get a random value between 0 and 255
+    /*  // get a random value between 0 and 255
     uint8_t rnd = lcg_rnd();
     ucg_int_t y = 0;
     ucg_int_t h = 14;
@@ -914,89 +915,89 @@ void loop()
 #ifdef __IWATCHDOG_H__
     IWatchdog.reload();
 #endif
-    
-  if ((micros() - lastpps) > 1110000)//this value is cause not exactly 1 second
-  {
-    ppsConnected = false;
-    #ifdef MODE_DEBUG
-    Serial.println("pps disconnected");
-    #endif
-  }
 
-  if (ppsConnected)
-  {
-    digitalWrite(ledPIN2, HIGH); // Turn the LED red on 
-    processNTP();
-  }
-  else
-  {
-    digitalWrite(ledPIN2, LOW); // Turn the LED red off when pps is disconnected
-  }
+    if ((micros() - lastpps) > 1110000) //this value is cause not exactly 1 second
+    {
+        ppsConnected = false;
+#ifdef MODE_DEBUG
+        Serial.println("pps disconnected");
+#endif
+    }
+
+    if (ppsConnected)
+    {
+        digitalWrite(ledPIN2, HIGH); // Turn the LED red on
+        processNTP();
+    }
+    else
+    {
+        digitalWrite(ledPIN2, LOW); // Turn the LED red off when pps is disconnected
+    }
 }
 
 /*Timestamp PPS*/
 void markPps()
 {
 
-  // this function marks the moment in microseconds when a rising edge was detected
-  pps = micros(); // micros() works upto one TCNT0 overflow IQRs
+    // this function marks the moment in microseconds when a rising edge was detected
+    pps = micros(); // micros() works upto one TCNT0 overflow IQRs
 
-  #ifdef MODE_INTERRUPT_DEBUG
-  //digitalWrite(ledPIN, HIGH);
-  //delay(100);
-  //digitalWrite(ledPIN, LOW);
-  //Serial.println("interrupcion");
-  #endif
-  //unixTime++;
+#ifdef MODE_INTERRUPT_DEBUG
+//digitalWrite(ledPIN, HIGH);
+//delay(100);
+//digitalWrite(ledPIN, LOW);
+//Serial.println("interrupcion");
+#endif
+    //unixTime++;
 }
 
 void processGPS()
 {
-  while (Serial2.available())
-  {
-    tbolt.readSerial();
-    processPPS();
-    //gps.encode(GPSSerial.read());
-  }
+    while (Serial2.available())
+    {
+        tbolt.readSerial();
+        processPPS();
+        //gps.encode(GPSSerial.read());
+    }
 }
 
 void processPPS()
 {
-  if (pps > 0)
-  {
-    lastpps = pps; //register the last pps
-    pps = 0;       //flag to enter to "if" every ppssecond
-    if (tbolt.getSoftwareVersionInfo() == true)
+    if (pps > 0)
     {
-      lasttime = tbolt.getSecondsSince1900Epoch() - UNIX_EPOCH;
-      // PPS is after the timestamp -> add one second
-      lasttime++;
-      //timeval valnow;
-      ppsConnected = true;
-    }
-    else //possible desconnection wire serial DB9
-    {
-      lastpps = 0;
-      lasttime = 0;
-      
-      #ifdef __IWATCHDOG_H__
-      IWatchdog.reload();
-      #endif
-      
-      //led red toggle indicated disconnection
-      digitalWrite(ledPIN2, HIGH);
-      delay(300);
-      digitalWrite(ledPIN2, LOW);
+        lastpps = pps; //register the last pps
+        pps = 0;       //flag to enter to "if" every ppssecond
+        if (tbolt.getSoftwareVersionInfo() == true)
+        {
+            lasttime = tbolt.getSecondsSince1900Epoch() - UNIX_EPOCH;
+            // PPS is after the timestamp -> add one second
+            lasttime++;
+            //timeval valnow;
+            ppsConnected = true;
+        }
+        else //possible desconnection wire serial DB9
+        {
+            lastpps = 0;
+            lasttime = 0;
 
-      #ifdef __IWATCHDOG_H__
-      IWatchdog.reload();
-      #endif
-      
-      #ifdef MODE_DEBUG
-      Serial.println("wire RS232 disconnected");
-      #endif
-    }
-  }// not else 'cause should wait minimun 1 seg for to say that ppssignal is disconnected 
+#ifdef __IWATCHDOG_H__
+            IWatchdog.reload();
+#endif
+
+            //led red toggle indicated disconnection
+            digitalWrite(ledPIN2, HIGH);
+            delay(300);
+            digitalWrite(ledPIN2, LOW);
+
+#ifdef __IWATCHDOG_H__
+            IWatchdog.reload();
+#endif
+
+#ifdef MODE_DEBUG
+            Serial.println("wire RS232 disconnected");
+#endif
+        }
+    } // not else 'cause should wait minimun 1 seg for to say that ppssignal is disconnected
 }
 
 /*
@@ -1013,175 +1014,173 @@ unsigned int usec2ntp(unsigned int usec)
 
 void processNTP()
 {
-  int packetSize = Udp.parsePacket();
+    int packetSize = Udp.parsePacket();
 
-  #ifdef MODE_DEBUG // contador de 3segundos, se comentara despues
-  uint32_t renewMillis = millis();
-  if (renewMillis - lasttimepacketsize >= timeout)
-  {
-    lasttimepacketsize = renewMillis;
-    Serial.println(packetSize);
-  }
-  #endif
-  
-  if (packetSize)
-  {
-    Serial.println(packetSize);
-    Serial.println("Packet received!");
-    
-    while (!Serial2.available())
+#ifdef MODE_DEBUG // contador de 3segundos, se comentara despues
+    uint32_t renewMillis = millis();
+    if (renewMillis - lasttimepacketsize >= timeout)
     {
-      ;
+        lasttimepacketsize = renewMillis;
+        Serial.println(packetSize);
     }
-    tbolt.readSerial();//its important before of use any thunderbolt function
-    
+#endif
 
-    //secondsTimestampRx = tbolt.getSecondsSince1900Epoch() - UNIX_EPOCH;
-    secondsTimestampRx = lasttime; //secondtimestamp is valued and replace in the instant pps is recogized for the variable "lasttime"
-    softRxTimestamp = micros();           // THIS CAN BE IMPROVED WITH A RECEIVE INTERRUP ROUTINE FROM THE NIC
-    fracRxSecond = softRxTimestamp - lastpps; // negative right after overflow after 70min (improve this)
-    // We multiply the uint16_t representation of the fractional second value ('fracRxSecond')
-    // times the MULTIPLIER value. The MULTIPLIER value is a number that helps us to get a
-    // DECIMAL representation of the BINARY value that we will use in the fractional part of
-    // the fixed point timestamps.
-    
-    //code snippet for preventing when the microseg overload more of one second
-    while (fracRxSecond >= 1000000)
+    if (packetSize)
     {
-      fracRxSecond = fracRxSecond - 1000000;
-      secondsTimestampRx++;
-      #ifdef MODE_DEBUG
-      Serial.println("warning the fracRxsecond is more than one second");
-      #endif
+        Serial.println(packetSize);
+        Serial.println("Packet received!");
+
+        while (!Serial2.available())
+        {
+            ;
+        }
+        tbolt.readSerial(); //its important before of use any thunderbolt function
+
+        //secondsTimestampRx = tbolt.getSecondsSince1900Epoch() - UNIX_EPOCH;
+        secondsTimestampRx = lasttime;            //secondtimestamp is valued and replace in the instant pps is recogized for the variable "lasttime"
+        softRxTimestamp = micros();               // THIS CAN BE IMPROVED WITH A RECEIVE INTERRUP ROUTINE FROM THE NIC
+        fracRxSecond = softRxTimestamp - lastpps; // negative right after overflow after 70min (improve this)
+        // We multiply the uint16_t representation of the fractional second value ('fracRxSecond')
+        // times the MULTIPLIER value. The MULTIPLIER value is a number that helps us to get a
+        // DECIMAL representation of the BINARY value that we will use in the fractional part of
+        // the fixed point timestamps.
+
+        //code snippet for preventing when the microseg overload more of one second
+        while (fracRxSecond >= 1000000)
+        {
+            fracRxSecond = fracRxSecond - 1000000;
+            secondsTimestampRx++;
+#ifdef MODE_DEBUG
+            Serial.println("warning the fracRxsecond is more than one second");
+#endif
+        }
+
+        fractionTimestampRx = (uint32_t)((fracRxSecond * MULTIPLIER));
+        Serial.println(fracRxSecond);
+
+        Serial.println(fractionTimestampRx);
+
+        //lee el pauqete udp para fijarse el puerto y la ip del cielte
+        //por la parte final del loop se enpaqueta con udp.write y gracias a udp.ip y udp.remoteport se sabe aquien cliente responder
+        //las siguinetes 3 lineasa pueden ir al inicio del if pero quitaria el tiempo exacto cuando se ha recibido el paquete RxNTP
+        Udp.read(packetBufferRx, NTP_PACKET_SIZE);
+        IPAddress Remote = Udp.remoteIP();
+        int PortNum = Udp.remotePort();
+
+        //setPacketNtp(&NTPpacketTx);
+        //displayMemberElements(&NTPpacketRx);
+
+        packetBufferTx[0] = 0b00100100; // LI, Version, Mode : no leap - ver4 - Server** (revisar si corresponde server)
+        packetBufferTx[1] = 1;          // stratum
+        packetBufferTx[2] = 16;         // polling minimum
+        packetBufferTx[3] = 0xEF;       // precision 11101111
+
+        // root delay ... it doesnt matter bc it will always be constant
+        packetBufferTx[4] = 0;
+        packetBufferTx[5] = 0;
+        packetBufferTx[6] = 0;
+        packetBufferTx[7] = 0;
+
+        // root dispTxersion ... let's go with zero bc we are using the reference signal from GPS
+        packetBufferTx[8] = 0;
+        packetBufferTx[9] = 0;
+        packetBufferTx[10] = 0;
+        packetBufferTx[11] = 0;
+
+        // reference ID
+        packetBufferTx[12] = 71; // "G"
+        packetBufferTx[13] = 80; // "P"
+        packetBufferTx[14] = 83; // "S"
+        packetBufferTx[15] = 0;  // "0"
+
+        // reference timestamp: last tiem when we synchronized with GPS
+        // ... let's go with last PPS (it is the same as the second part of the receive timestamp)
+        packetBufferTx[16] = (uint8_t)((secondsTimestampRx >> 24) & 0XFF);
+        packetBufferTx[17] = (uint8_t)((secondsTimestampRx >> 16) & 0xFF);
+        packetBufferTx[18] = (uint8_t)((secondsTimestampRx >> 8) & 0xFF);
+        packetBufferTx[19] = (uint8_t)((secondsTimestampRx)&0xFF);
+        packetBufferTx[20] = 0;
+        packetBufferTx[21] = 0;
+        packetBufferTx[22] = 0;
+        packetBufferTx[23] = 0;
+
+        // origin timestamp: copy originate timestamp from incoming UDP transmit timestamp
+        packetBufferTx[24] = packetBufferRx[40];
+        packetBufferTx[25] = packetBufferRx[41];
+        packetBufferTx[26] = packetBufferRx[42];
+        packetBufferTx[27] = packetBufferRx[43];
+        packetBufferTx[28] = packetBufferRx[44];
+        packetBufferTx[29] = packetBufferRx[45];
+        packetBufferTx[30] = packetBufferRx[46];
+        packetBufferTx[31] = packetBufferRx[47];
+
+        //receive timestamp
+        packetBufferTx[32] = (secondsTimestampRx >> 24) & 0XFF;
+        packetBufferTx[33] = (secondsTimestampRx >> 16) & 0xFF;
+        packetBufferTx[34] = (secondsTimestampRx >> 8) & 0xFF;
+        packetBufferTx[35] = (secondsTimestampRx)&0xFF;
+        packetBufferTx[36] = (fractionTimestampRx >> 24) & 0XFF;
+        packetBufferTx[37] = (fractionTimestampRx >> 16) & 0XFF;
+        packetBufferTx[38] = (fractionTimestampRx >> 8) & 0XFF;
+        packetBufferTx[39] = (fractionTimestampRx)&0XFF;
+
+        secondsTimestampTx = lasttime;            // convert to seconds since 1900 (consumes one instruction)
+        softTxTimestamp = micros();               // THIS CAN BE IMPROVED WITH A TRANSMIT INTERRUP ROUTINE FROM THE NIC
+                                                  // if working with interrupts for symmetric interleaved mode, the actual
+                                                  // timestamp is transmited in the following NTP packet
+        fracTxSecond = softTxTimestamp - lastpps; // check for negatives after overflow after 70min
+
+        while (fracTxSecond >= 1000000)
+        {
+            fracTxSecond = fracTxSecond - 1000000;
+            secondsTimestampTx++;
+#ifdef MODE_DEBUG
+            Serial.println("warning the fracRxsecond is more than one second");
+            //      ucg.setColor(255, 0, 0); //red alert
+            //    ucg.setPrintPos((ucg.getWidth() / 2) - ((sizeof("warning the fracRxsecond is more than one second") / 2) * font.size_12), (ucg.getHeight() * 3) / 8);
+            //   ucg.print("warning the fracRxsecond is more than one second");
+#endif
+        }
+
+#ifdef __IWATCHDOG_H__
+        IWatchdog.reload();
+#endif
+
+        fractionTimestampTx = (uint32_t)((fracTxSecond * MULTIPLIER));
+
+        Serial.println(fracTxSecond);
+        Serial.println(fractionTimestampTx);
+        //fractionTimestampTx = usec2ntp(fracTxSecond);
+        Serial.println(fractionTimestampTx);
+        //transmitt timestamp
+        packetBufferTx[40] = (secondsTimestampTx >> 24) & 0XFF;
+        packetBufferTx[41] = (secondsTimestampTx >> 16) & 0xFF;
+        packetBufferTx[42] = (secondsTimestampTx >> 8) & 0xFF;
+        packetBufferTx[43] = (secondsTimestampTx)&0xFF;
+        packetBufferTx[44] = (fractionTimestampTx >> 24) & 0XFF;
+        packetBufferTx[45] = (fractionTimestampTx >> 16) & 0XFF;
+        packetBufferTx[46] = (fractionTimestampTx >> 8) & 0XFF;
+        packetBufferTx[47] = (fractionTimestampTx)&0XFF;
+
+        // Reply to the IP address and port that sent the NTP request
+        Udp.beginPacket(Remote, PortNum);
+        Udp.write(packetBufferTx, NTP_PACKET_SIZE);
+        Udp.endPacket();
+
+#ifdef __IWATCHDOG_H__
+        IWatchdog.reload();
+#endif
+
+#ifdef MODE_DEBUG
+        for (int j = 44; j < NTP_PACKET_SIZE; j++)
+        {
+            //Serial.print(j);
+            //Serial.print("byte: ");
+            Serial.print(packetBufferTx[j], BIN);
+        }
+        Serial.println("");
+#endif
     }
-
-    fractionTimestampRx = (uint32_t)((fracRxSecond * MULTIPLIER));
-    Serial.println(fracRxSecond);
-
-    Serial.println(fractionTimestampRx);
-    
-    //lee el pauqete udp para fijarse el puerto y la ip del cielte
-    //por la parte final del loop se enpaqueta con udp.write y gracias a udp.ip y udp.remoteport se sabe aquien cliente responder
-    //las siguinetes 3 lineasa pueden ir al inicio del if pero quitaria el tiempo exacto cuando se ha recibido el paquete RxNTP
-    Udp.read(packetBufferRx, NTP_PACKET_SIZE);
-    IPAddress Remote = Udp.remoteIP();
-    int PortNum = Udp.remotePort();
-
-    //setPacketNtp(&NTPpacketTx);
-    //displayMemberElements(&NTPpacketRx);
-
-    packetBufferTx[0] = 0b00100100; // LI, Version, Mode : no leap - ver4 - Server** (revisar si corresponde server)
-    packetBufferTx[1] = 1;          // stratum
-    packetBufferTx[2] = 16;         // polling minimum
-    packetBufferTx[3] = 0xEF;       // precision 11101111
-
-    // root delay ... it doesnt matter bc it will always be constant
-    packetBufferTx[4] = 0;
-    packetBufferTx[5] = 0;
-    packetBufferTx[6] = 0;
-    packetBufferTx[7] = 0;
-
-    // root dispTxersion ... let's go with zero bc we are using the reference signal from GPS
-    packetBufferTx[8] = 0;
-    packetBufferTx[9] = 0;
-    packetBufferTx[10] = 0;
-    packetBufferTx[11] = 0;
-
-    // reference ID
-    packetBufferTx[12] = 71; // "G"
-    packetBufferTx[13] = 80; // "P"
-    packetBufferTx[14] = 83; // "S"
-    packetBufferTx[15] = 0;  // "0"
-
-    // reference timestamp: last tiem when we synchronized with GPS
-    // ... let's go with last PPS (it is the same as the second part of the receive timestamp)
-    packetBufferTx[16] = (uint8_t)((secondsTimestampRx >> 24) & 0XFF);
-    packetBufferTx[17] = (uint8_t)((secondsTimestampRx >> 16) & 0xFF);
-    packetBufferTx[18] = (uint8_t)((secondsTimestampRx >> 8) & 0xFF);
-    packetBufferTx[19] = (uint8_t)((secondsTimestampRx)&0xFF);
-    packetBufferTx[20] = 0;
-    packetBufferTx[21] = 0;
-    packetBufferTx[22] = 0;
-    packetBufferTx[23] = 0;
-
-    // origin timestamp: copy originate timestamp from incoming UDP transmit timestamp
-    packetBufferTx[24] = packetBufferRx[40];
-    packetBufferTx[25] = packetBufferRx[41];
-    packetBufferTx[26] = packetBufferRx[42];
-    packetBufferTx[27] = packetBufferRx[43];
-    packetBufferTx[28] = packetBufferRx[44];
-    packetBufferTx[29] = packetBufferRx[45];
-    packetBufferTx[30] = packetBufferRx[46];
-    packetBufferTx[31] = packetBufferRx[47];
-
-    //receive timestamp
-    packetBufferTx[32] = (secondsTimestampRx >> 24) & 0XFF;
-    packetBufferTx[33] = (secondsTimestampRx >> 16) & 0xFF;
-    packetBufferTx[34] = (secondsTimestampRx >> 8) & 0xFF;
-    packetBufferTx[35] = (secondsTimestampRx)&0xFF;
-    packetBufferTx[36] = (fractionTimestampRx >> 24) & 0XFF;
-    packetBufferTx[37] = (fractionTimestampRx >> 16) & 0XFF;
-    packetBufferTx[38] = (fractionTimestampRx >> 8) & 0XFF;
-    packetBufferTx[39] = (fractionTimestampRx)&0XFF;
-
-    
-    secondsTimestampTx = lasttime; // convert to seconds since 1900 (consumes one instruction)
-    softTxTimestamp = micros();                                         // THIS CAN BE IMPROVED WITH A TRANSMIT INTERRUP ROUTINE FROM THE NIC
-                                                                        // if working with interrupts for symmetric interleaved mode, the actual
-                                                                        // timestamp is transmited in the following NTP packet
-    fracTxSecond = softTxTimestamp - lastpps;                               // check for negatives after overflow after 70min
-
-    while (fracTxSecond >= 1000000)
-    {
-      fracTxSecond = fracTxSecond - 1000000;
-      secondsTimestampTx++;
-      #ifdef MODE_DEBUG
-      Serial.println("warning the fracRxsecond is more than one second");
-//      ucg.setColor(255, 0, 0); //red alert
-  //    ucg.setPrintPos((ucg.getWidth() / 2) - ((sizeof("warning the fracRxsecond is more than one second") / 2) * font.size_12), (ucg.getHeight() * 3) / 8);
-   //   ucg.print("warning the fracRxsecond is more than one second");
-      #endif
-    }
-
-    #ifdef __IWATCHDOG_H__
-    IWatchdog.reload();
-    #endif
-      
-    fractionTimestampTx = (uint32_t)((fracTxSecond * MULTIPLIER));
-    
-    Serial.println(fracTxSecond);
-    Serial.println(fractionTimestampTx);
-    //fractionTimestampTx = usec2ntp(fracTxSecond);
-    Serial.println(fractionTimestampTx);
-    //transmitt timestamp
-    packetBufferTx[40] = (secondsTimestampTx >> 24) & 0XFF;
-    packetBufferTx[41] = (secondsTimestampTx >> 16) & 0xFF;
-    packetBufferTx[42] = (secondsTimestampTx >> 8)  & 0xFF;
-    packetBufferTx[43] = (secondsTimestampTx)       & 0xFF;
-    packetBufferTx[44] = (fractionTimestampTx >> 24) & 0XFF;
-    packetBufferTx[45] = (fractionTimestampTx >> 16) & 0XFF;
-    packetBufferTx[46] = (fractionTimestampTx >> 8)  & 0XFF;
-    packetBufferTx[47] = (fractionTimestampTx)       & 0XFF;
-
-    // Reply to the IP address and port that sent the NTP request
-    Udp.beginPacket(Remote, PortNum);
-    Udp.write(packetBufferTx, NTP_PACKET_SIZE);
-    Udp.endPacket();
-    
-    #ifdef __IWATCHDOG_H__
-    IWatchdog.reload();
-    #endif
-    
-    #ifdef MODE_DEBUG
-    for (int j = 44; j < NTP_PACKET_SIZE; j++)
-    {
-      //Serial.print(j);
-      //Serial.print("byte: ");
-      Serial.print(packetBufferTx[j], BIN);
-    }
-    Serial.println("");
-    #endif
-  }
 }
 
 void setPacketNtp(packetNTP_t *psetPacket)
@@ -1303,7 +1302,28 @@ DynamicJsonDocument decode_command(String command)
 //************************************
 //**** API FUNCTIONS DEFINITIONS *****
 //************************************
+int getStatusTrimble(String command)
+{
+#ifdef __IWATCHDOG_H__
+    IWatchdog.reload();
+#endif
 
+    Serial.println("\"getStatusTrimble\" command selected.");
+    Serial.print("command content: ");
+    Serial.println(command);
+    DynamicJsonDocument doc = decode_command(command);
+    enable = (uint8_t)doc["enable"];
+    Serial.print("enable: ");
+    Serial.println(enable);
+
+    if (enable == 1)
+    {
+        GPSStatus status = tbolt.getStatus();
+        display_status(status);
+    }
+
+    return 1;
+}
 int reset(String command)
 {
 #ifdef __IWATCHDOG_H__
@@ -1573,12 +1593,12 @@ void SendPacketSPI(byte address, byte buf_data, byte *resp)
     delayMicroseconds(SPI_delay);
 //byte resp[] = {0x0,0x0};
 #ifdef MODE_DEBUG
-  DEBUG_RC_PRINTLN("********************************");
-  DEBUG_RC_PRINTLN("Begin SPI after transfer.(0xF0)");
-  DEBUG_RC_PRINT("address: ");
-  DEBUG_RC_PRINT2(address, HEX);
-  DEBUG_RC_PRINT(", data: ");
-  DEBUG_RC_PRINTLN2(buf_data, HEX);
+    DEBUG_RC_PRINTLN("********************************");
+    DEBUG_RC_PRINTLN("Begin SPI after transfer.(0xF0)");
+    DEBUG_RC_PRINT("address: ");
+    DEBUG_RC_PRINT2(address, HEX);
+    DEBUG_RC_PRINT(", data: ");
+    DEBUG_RC_PRINTLN2(buf_data, HEX);
 #endif
 
     digitalWrite(SS, LOW);
@@ -1643,12 +1663,12 @@ int SendPacketSPI2(byte address, byte buf_data, byte *resp)
     delayMicroseconds(SPI_delay);
 //byte resp[] = {0x0,0x0};
 #ifdef MODE_DEBUG
-DEBUG_RC_PRINTLN("********************************");
-  DEBUG_RC_PRINTLN("Begin SPI after transfer.(0xF0)");
-  DEBUG_RC_PRINT("address: ");
-  DEBUG_RC_PRINT2(address, HEX);
-  DEBUG_RC_PRINT(", data: ");
-  DEBUG_RC_PRINTLN2(buf_data, HEX);
+    DEBUG_RC_PRINTLN("********************************");
+    DEBUG_RC_PRINTLN("Begin SPI after transfer.(0xF0)");
+    DEBUG_RC_PRINT("address: ");
+    DEBUG_RC_PRINT2(address, HEX);
+    DEBUG_RC_PRINT(", data: ");
+    DEBUG_RC_PRINTLN2(buf_data, HEX);
 #endif
 
     digitalWrite(SS, LOW);
