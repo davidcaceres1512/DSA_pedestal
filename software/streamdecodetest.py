@@ -8,9 +8,14 @@ import signal
 import sys
 import logging
 import pandas as pd
+from queue import Queue
 #----------------------------
 import os
 import h5py
+#----------------------------
+q=Queue()
+dataMessage = {}
+#----------------------------
 fullpath='/home/soporte/Downloads/DATA_PEDESTAL/PED_RT'
 #wpath='Users\soporte\Downloads'
 #-----------------------------
@@ -63,6 +68,17 @@ azspeed = 0
 elpos = 0
 elspeed = 0
 start_variable = False
+
+#this variables its different of the function getspeedPosition
+cw = 0 #count while main program for defined buffers dictionaries prev-act
+cc = 0
+AzPositionM=[]
+AzSpeedM=[]
+ElPositionM=[]
+ElSpeedM=[]
+RawDataM=[]
+TimestampM=0
+
 
 def preprocessingOutliers(varInput):
     s=pd.Series(varInput)
@@ -227,18 +243,32 @@ def on_disconnect(client, userdata, rc):
 def on_message(client, userdata, msg):
     #print(msg.topic+" "+str(msg.payload))
     global start_time
+    #variables (the last sample per variable) for telegram
     global azpos
     global azspeed
     global elpos
     global elspeed
-    global directoryx
+    #----------------------
+    #variables that you can modified for hdf5 files
+    global RawDataM, AzPositionM, AzSpeedM, ElPositionM, ElSpeedM, TimestampM
+
+    dataQueue = {'azpos': [], 'elpos': [], 'azvel': [], 'elvel': [], 'timestmp': None}
 
     start_time = time.process_time_ns()
-    RawData,AzPosition,AzSpeed,ElPosition,ElSpeed,Timestamp = getSpeedPosition(str(msg.payload.decode("utf-8")))
+    RawDataM,AzPositionM,AzSpeedM,ElPositionM,ElSpeedM,TimestampM = getSpeedPosition(str(msg.payload.decode("utf-8")))
     #preprocessingOutliers(ElPosition)
     #preprocessingZero(ElPosition)
     #preprocessingOutliers(AzPosition)
-    xx = numpy.array([[AzPosition],[AzSpeed],[ElPosition],[ElSpeed]], dtype=object)
+
+    dataQueue['azpos'] = AzPositionM
+    dataQueue['elpos'] = ElPositionM
+    dataQueue['azvel'] = AzSpeedM
+    dataQueue['elvel'] = ElSpeedM
+    dataQueue['timestmp'] = TimestampM
+
+    q.put(dataQueue)
+
+    xx = numpy.array([[AzPositionM],[AzSpeedM],[ElPositionM],[ElSpeedM]], dtype=object)
     with numpy.printoptions(precision=3, suppress=True):
         #print("Azimuth position array:")
         #print(numpy.array(AzPosition))
@@ -250,62 +280,94 @@ def on_message(client, userdata, msg):
         #print(numpy.array(ElSpeed))
         #print("Timestamp is:"+str(Timestamp))
         logging.debug("Azimuth position array:")
-        logging.debug(numpy.array(AzPosition))
-        logging.debug(numpy.size(numpy.array(AzPosition)))
+        logging.debug(numpy.array(AzPositionM))
+        logging.debug(numpy.size(numpy.array(AzPositionM)))
         logging.debug("Elevation position array:")
-        logging.debug(numpy.array(ElPosition))
-        logging.debug(numpy.size(numpy.array(ElPosition)))
+        logging.debug(numpy.array(ElPositionM))
+        logging.debug(numpy.size(numpy.array(ElPositionM)))
         logging.debug("Azimuth speed array:")
-        logging.debug(numpy.array(AzSpeed))
-        logging.debug(numpy.size(numpy.array(AzSpeed)))
+        logging.debug(numpy.array(AzSpeedM))
+        logging.debug(numpy.size(numpy.array(AzSpeedM)))
         logging.debug("Elevation speed array:")
-        logging.debug(numpy.array(ElSpeed))
-        logging.debug(numpy.size(numpy.array(ElSpeed)))
-        logging.debug("Timestamp is:"+str(Timestamp))
+        logging.debug(numpy.array(ElSpeedM))
+        logging.debug(numpy.size(numpy.array(ElSpeedM)))
+        logging.debug("Timestamp is:"+str(TimestampM))
 
-
-    epoc= int(Timestamp)
-    meta='PE'
-    epoch_time = int(epoc)
-    #print(type(epoch_time))
-    time_val = time.localtime(int(epoc))
-    ext=".hdf5"
-    filex="%s%4.4d%3.3d%10.4d%s"%(meta,time_val.tm_year,time_val.tm_yday,epoch_time,ext)
-    #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
-    filename =os.path.join(fullpath,directoryx,'HDF5',filex)
-    print(filename)
-
-    azi_pos = AzPosition
-    ele_pos = ElPosition
-    azi_vel = AzSpeed
-    ele_vel = ElSpeed
-    #new function for constant samples...
-    setSample = 100
-    data_azi_pos = numpy.array(azi_pos)
-    data_ele_pos = numpy.array(ele_pos)
-    data_azi_vel = numpy.array(azi_vel)
-    data_ele_vel = numpy.array(ele_vel)
-    
-    #if (data_azi_pos.size()==100):
-      
-
-    with h5py.File(filename,'w') as fp:
-      #print("Escribiendo HDF5...",epoc)
-      #·················· Data·....······································  
-      grp = fp.create_group("Data")
-      dset = grp.create_dataset("azi_pos"  , data=data_azi_pos)
-      dset = grp.create_dataset("ele_pos"  , data=data_ele_pos)
-      dset = grp.create_dataset("azi_vel"  , data=data_azi_vel)
-      dset = grp.create_dataset("ele_vel"  , data=data_ele_vel)
-      dset = grp.create_dataset("utc"      , data=numpy.array(int(epoc)))
-      
-    azpos = AzPosition[-1]
-    azspeed = AzSpeed[-1]
-    elpos = ElPosition[-1]
-    elspeed = ElSpeed[-1]
+    azpos = AzPositionM[-1]
+    azspeed = AzSpeedM[-1]
+    elpos = ElPositionM[-1]
+    elspeed = ElSpeedM[-1]
 
 def on_publish(client,userdata,result):             #create function for callback
     print("data published \n")
+    pass
+
+def hdf5Write():
+    global directoryx
+    global dataMessage
+    global cc
+    epoc = int(TimestampM)
+    meta = 'PE'
+    epoch_time = int(epoc)
+    #print(type(epoch_time))
+    time_val = time.localtime(int(epoc))
+    ext = ".hdf5"
+    filex = "%s%4.4d%3.3d%10.4d%s" % (meta, time_val.tm_year, time_val.tm_yday, epoch_time, ext)
+    #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
+    filename = os.path.join(fullpath, directoryx, 'HDF5', filex)
+    print(filename)
+
+    #new function for constant samples...
+    setSample = 100
+    azi_pos = AzPositionM
+    ele_pos = ElPositionM
+    azi_vel = AzSpeedM
+    ele_vel = ElSpeedM
+    dynBuffAct = {'azpos': [], 'elpos': [], 'azvel': [], 'elvel': []}
+    dynBuffPrev = {'azpos': [], 'elpos': [], 'azvel': [], 'elvel': []}
+
+    if (cc == 0):
+      dynBuffPrev['azpos'] = azi_pos
+      dynBuffPrev['elpos'] = ele_pos
+      dynBuffPrev['azvel'] = azi_vel
+      dynBuffPrev['elvel'] = ele_vel
+      cc = 1
+      pass
+
+    """data_azi_pos = numpy.array(azi_pos)
+    data_ele_pos = numpy.array(ele_pos)
+    data_azi_vel = numpy.array(azi_vel)
+    data_ele_vel = numpy.array(ele_vel)"""
+
+    #hacer un append hasta llegar a 100 para cada campo. se podria aprovechar los condicionales al paso para hacer elguardado de datos...
+    # not forgotten, len(azi_pos)=len(azi_vel) and len(ele_pos)=len(ele_vel). For that, I use only two condicionals
+    if (len(azi_pos) == 100):
+      if (len(ele_pos) == 100):
+        pass
+      else:
+        pass
+      pass
+    else:
+      pass
+      #comprueba que los campos de datos esten todos a 100 para recien almacenarlo en formato hdf5
+    
+    if (numpy.size(azi_pos) == 100):
+      pass
+      if (numpy.size(ele_pos) == 100):
+        pass
+    else:
+      pass
+
+    with h5py.File(filename, 'w') as fp:
+      #print("Escribiendo HDF5...",epoc)
+      #·················· Data·....······································
+      grp = fp.create_group("Data")
+      dset = grp.create_dataset("azi_pos", data=numpy.array(azi_pos))
+      dset = grp.create_dataset("azi_pos_len", data=numpy.array(len(azi_pos)))
+      dset = grp.create_dataset("ele_pos", data=numpy.array(ele_pos))
+      dset = grp.create_dataset("azi_vel", data=numpy.array(azi_vel))
+      dset = grp.create_dataset("ele_vel", data=numpy.array(ele_vel))
+      dset = grp.create_dataset("utc", data=numpy.array(int(epoc)))
     pass
 
 client = mqtt.Client()
@@ -315,7 +377,7 @@ client.on_message = on_message
 client.on_publish = on_publish
 
 client.connect(broker, port)
-client.subscribe("JRO_topic")
+client.subscribe("JRO_topic")#subscribe(topic,qos)
 client.loop_start()
 
 #start_handler = CommandHandler('start', start)
@@ -340,7 +402,18 @@ client.loop_start()
 
 publish_time = time.process_time_ns()
 telegram_time = time.process_time_ns()
+
 while True:
+  while not q.empty():
+    dataMessage = q.get()
+    #print("queue: ", dataMessage)
+    logging.debug("dataMessage queue:")
+    logging.debug(dataMessage)
+  
+  cw+=1
+  if cw>0:
+    pass
+  #use hdf5Write
   time.sleep(1)
   #if (time.process_time_ns()-publish_time)/1000000>=1000:
   # ret= client.publish("JRO_topic",data)
