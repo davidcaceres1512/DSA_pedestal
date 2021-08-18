@@ -251,12 +251,16 @@ def on_message(client, userdata, msg):
         #print("Timestamp is:"+str(Timestamp))
         logging.debug("Azimuth position array:")
         logging.debug(numpy.array(AzPosition))
+        logging.debug(numpy.size(numpy.array(AzPosition)))
         logging.debug("Elevation position array:")
         logging.debug(numpy.array(ElPosition))
+        logging.debug(numpy.size(numpy.array(ElPosition)))
         logging.debug("Azimuth speed array:")
         logging.debug(numpy.array(AzSpeed))
+        logging.debug(numpy.size(numpy.array(AzSpeed)))
         logging.debug("Elevation speed array:")
         logging.debug(numpy.array(ElSpeed))
+        logging.debug(numpy.size(numpy.array(ElSpeed)))
         logging.debug("Timestamp is:"+str(Timestamp))
 
 
@@ -270,21 +274,31 @@ def on_message(client, userdata, msg):
     #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
     filename =os.path.join(fullpath,directoryx,'HDF5',filex)
     print(filename)
-    fp = h5py.File(filename,'w')
-    #print("Escribiendo HDF5...",epoc)
-    #·················· Data·....······································
+
     azi_pos = AzPosition
     ele_pos = ElPosition
     azi_vel = AzSpeed
     ele_vel = ElSpeed
-    grp = fp.create_group("Data")
-    dset = grp.create_dataset("azi_pos"  , data=numpy.array(azi_pos))
-    dset = grp.create_dataset("ele_pos"  , data=numpy.array(ele_pos))
-    dset = grp.create_dataset("azi_vel"  , data=numpy.array(azi_vel))
-    dset = grp.create_dataset("ele_vel"  , data=numpy.array(ele_vel))
-    dset = grp.create_dataset("utc"      , data=numpy.array(int(epoc)))
-    fp.close()
+    #new function for constant samples...
+    setSample = 100
+    data_azi_pos = numpy.array(azi_pos)
+    data_ele_pos = numpy.array(ele_pos)
+    data_azi_vel = numpy.array(azi_vel)
+    data_ele_vel = numpy.array(ele_vel)
     
+    #if (data_azi_pos.size()==100):
+      
+
+    with h5py.File(filename,'w') as fp:
+      #print("Escribiendo HDF5...",epoc)
+      #·················· Data·....······································  
+      grp = fp.create_group("Data")
+      dset = grp.create_dataset("azi_pos"  , data=data_azi_pos)
+      dset = grp.create_dataset("ele_pos"  , data=data_ele_pos)
+      dset = grp.create_dataset("azi_vel"  , data=data_azi_vel)
+      dset = grp.create_dataset("ele_vel"  , data=data_ele_vel)
+      dset = grp.create_dataset("utc"      , data=numpy.array(int(epoc)))
+      
     azpos = AzPosition[-1]
     azspeed = AzSpeed[-1]
     elpos = ElPosition[-1]

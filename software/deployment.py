@@ -7,13 +7,13 @@ cmd_shell=[
     'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/nucleo_logger_server.py; exec bash\"',
     'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/nucleo_logger_pedestal.py; exec bash\"',
     'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/streamdecodetest.py; exec bash\"',
-    'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/ping_logger.py -f pedestal -i \"10.10.10.27\"; exec bash\"',
-    'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/ping_logger.py -f server -i \"10.10.10.28\"; exec bash\"'
+    'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/ping_logger.py -f pedestal -i \"192.168.1.27\"; exec bash\"',
+    'gnome-terminal -x bash -c \"/usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/ping_logger.py -f server -i \"192.168.1.28\"; exec bash\"'
 ] 
 
 def openWireshark():
     #cmd_wireshark= 'wireshark -i 1 -k -f \"tcp port 1883\"' # put "wireshark -D" for view the interfaces enumerate list ("-i 1" is the interface eno2)
-    cmd_wireshark= 'wireshark -i 2 -k' 
+    cmd_wireshark= 'wireshark -i 3 -k' 
     completed1 = subprocess.run(cmd_wireshark, shell=True)
     print('returncode_wireshark:', completed1.returncode)
 
