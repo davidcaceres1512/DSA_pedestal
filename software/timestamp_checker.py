@@ -1,3 +1,4 @@
+#execution example: /usr/bin/python /home/soporte/Downloads/DSA_pedestal/software/timestamp_checker.py -f 20210811-094215 -v
 import os
 import argparse
 import subprocess

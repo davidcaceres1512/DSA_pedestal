@@ -23,8 +23,11 @@ fullpath='/home/soporte/Downloads/DATA_PEDESTAL/PED_RT'
 directoryx=''
 
 
-directoryx=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+#directoryx=datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+directoryx=datetime.datetime.now().strftime("P%Y%m%d-%H%M%S")
+
 os.mkdir(os.path.join(fullpath,directoryx))
+os.mkdir(os.path.join("/DATA_RM/TEST_PEDESTAL",directoryx))
 os.mkdir(os.path.join(fullpath,directoryx,'LOG'))
 os.mkdir(os.path.join(fullpath,directoryx,'HDF5'))
 
@@ -314,7 +317,8 @@ def hdf5Write():
     ext = ".hdf5"
     filex = "%s%4.4d%3.3d%10.4d%s" % (meta, time_val.tm_year, time_val.tm_yday, epoch_time, ext)
     #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
-    filename = os.path.join(fullpath, directoryx, 'HDF5', filex)
+    #filename = os.path.join(fullpath, directoryx, 'HDF5', filex)
+    filename = os.path.join("/DATA_RM","TEST_PEDESTAL",filex)
     print(filename)
 
     #new function for constant samples...
@@ -472,7 +476,8 @@ while True:
         ext = ".hdf5"
         filex = "%s%4.4d%3.3d%10.4d%s" % (meta, time_val.tm_year, time_val.tm_yday, epoch_time, ext)
         #filename = os.path.join(os.sep, "C:" + os.sep, wpath ) #for windows
-        filename = os.path.join(fullpath, directoryx, 'HDF5', filex)
+        #filename = os.path.join(fullpath, directoryx, 'HDF5', filex)
+        filename = os.path.join("/DATA_RM/TEST_PEDESTAL",directoryx,filex)
         print(filename)
         with h5py.File(filename, 'w') as fp:
           #print("Escribiendo HDF5...",epoc)
