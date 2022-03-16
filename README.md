@@ -147,8 +147,21 @@ sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2
 # show menu for selecting the version
 sudo update-alternatives --config python3
 ```
+3. create virtual enviroment
+```bash
+#This command creates a directory called 'my_env_project' in the current directory, which contains pip, interpreter, scripts and libraries.
+python3 -m venv my_env_project
 
-2. install pip in python 3.9
+#activate virtual enviroment
+source my_env_project/bin/activate
+
+#deactivate virtual enviroment
+deactivate
+
+#delete virtual enviroment
+sudo rm -rf my_env_project
+```
+4. install pip in python 3.9
 
 ```bash
 #install pip for specific version
