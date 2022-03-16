@@ -129,6 +129,10 @@ mosquitto -v
 ```bash
 #!/bin/sh
 
+# Update the packages list and install the prerequisites
+sudo apt update
+sudo apt install software-properties-common
+
 # install PPA
 sudo add-apt-repository ppa:deadsnakes/ppa
 
